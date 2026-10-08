@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Operation Blackout: Friction & Choice</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f6fb;--card:#fff;--ink:#14182b;--mut:#5b6380;--line:#d8ddec;--acc:#2f5bff;--red:#d92d4a;--grn:#12a36b;--amb:#e08a00}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f1e;--card:#151b30;--ink:#e8ecfa;--mut:#8f99bd;--line:#26304f;--acc:#6d8bff;--red:#ff5c78;--grn:#2fd79a;--amb:#ffb02e}}
+:root[data-theme="dark"]{--bg:#0b0f1e;--card:#151b30;--ink:#e8ecfa;--mut:#8f99bd;--line:#26304f;--acc:#6d8bff;--red:#ff5c78;--grn:#2fd79a;--amb:#ffb02e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:1.7rem;margin:.2em 0}h2{margin:.2em 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0}
+.mut{color:var(--mut)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 16px;border-radius:10px}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.p{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+button.sel{outline:3px solid var(--acc)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.pl{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card)}
+.pl.act{outline:3px solid var(--acc)}
+.pl input{width:100%;font:inherit;font-weight:600;background:transparent;color:var(--ink);border:0;border-bottom:1px dashed var(--line);margin-bottom:6px}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--grn);transition:width .3s}
+.stat{display:flex;justify-content:space-between;font-size:.85rem;margin:4px 0}
+.timer{font-size:3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.r1 .timer{color:var(--red)}
+.tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;color:#fff}
+.lock{background:var(--red)}.open{background:var(--grn)}
+.r1.mode{border:2px solid var(--red)}.r2.mode{border:2px solid var(--grn)}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:.85rem;max-height:120px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+textarea{width:100%;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px}
+.hide{display:none}
+.grid2{position:relative;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;height:300px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.grid2 div{padding:8px;font-size:.85rem;border:1px solid var(--line);color:var(--mut)}
+.dot{position:absolute;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;transform:translate(-50%,-50%);transition:all .3s}
+input[type=range]{width:100%}
+.qo{text-align:left}
+</style></head><body><div class="wrap">
+
+<div id="hud" class="hide"><div id="players"></div></div>
+
+<section id="s-intro" class="card">
+  <h1>⚡ Operation Blackout</h1>
+  <p class="mut">A solo cyber-defense mini-game · about 4 minutes</p>
+  <p><b>Incident alert:</b> The Cyber Security Task Force has detected an active breach. Attackers are probing the network, and every minute of delay costs the company data.</p>
+  <p><b>Your mission:</b> One analyst. Two incidents. One shot at containing the damage before the attackers pivot deeper.</p>
+  <p class="mut">Enter your name, then start Round 1. Play it through without stopping; there is a short chat afterwards.</p>
+  <div class="pl" style="max-width:260px"><input id="nm" value="Analyst" placeholder="Your name"></div><br>
+  <button class="p" onclick="start()">Start Round 1 →</button>
+</section>
+
+<section id="s-r1" class="card mode r1 hide">
+  <div class="row" style="justify-content:space-between"><h2>🔒 Round 1: The Hard-Coded Protocol</h2><span class="tag lock">LOCKED SYSTEM</span></div>
+  <p>"This is a locked system. Every move is pre-programmed. You are not here to think. You are here to execute. Every deviation is logged."</p>
+  <p class="mut">Rules: 60 seconds · Work alone and in silence · Follow A → B → C · -50 HP for any variation · one sentence only · max 10 words · the word "because" is banned.</p>
+  <div class="timer" id="t1">60</div>
+  <div class="row"><button class="p" id="go1" onclick="run(1)">EXECUTE</button></div>
+  <div id="seq1" class="hide">
+    <div class="card" id="inc1">
+      <b>🚨 INCIDENT #1: Suspicious Login</b><br>
+      At 3:07 AM, an employee account logs in from a foreign IP address and starts downloading the HR salary database. The employee is listed as "on vacation."
+    </div>
+    <div class="row"><b>A</b><button id="A" onclick="step('A')">Read the card ONCE</button>
+      <b>B</b><button class="b" disabled onclick="step('B','BLOCK')">BLOCK</button><button class="b" disabled onclick="step('B','ALLOW')">ALLOW</button><button class="b" disabled onclick="step('B','ESCALATE')">ESCALATE</button></div>
+    <p><b>C</b> Write ONE sentence:</p>
+    <p class="mut">⚠ Your sentence must be 10 words or fewer.<br>⚠ The word "because" is banned. Breaking either rule costs -50 HP and the answer is rejected.</p>
+    <textarea id="c1" rows="2" disabled></textarea><br><br>
+    <button id="sub1" disabled onclick="step('C')">Submit</button>
+    <p class="mut">Out-of-order steps cost -50 HP automatically. Your facilitator may also log violations.</p>
+  </div>
+  <div class="log" id="log1"></div>
+  <br><button class="p hide" id="next1" onclick="show('r2')">Continue to Round 2 →</button>
+</section>
+
+<section id="s-r2" class="card mode r2 hide">
+  <div class="row" style="justify-content:space-between"><h2>🌐 Round 2: The Sandbox Protocol</h2><span class="tag open">OPEN SYSTEM</span></div>
+  <p>"This system is open. There's no single winning move, and I'm genuinely curious how you'll tackle it. Your judgment is the most powerful tool in this room."</p>
+  <div class="card">
+    <b>🚨 INCIDENT #2: The Vendor Backdoor</b><br>
+    A trusted vendor's system has been compromised, and it holds a live connection into your customer database. Cutting the link stops the attackers, but also halts orders for thousands of customers. How do you contain the breach while protecting the business? Be creative. Offering more than one solution is a bonus.
+  </div>
+  <p class="mut">Think freely, there is no single right answer. You have 90 seconds. Synergy Points are earned through your answers below.</p>
+  <div class="timer" id="t2" style="color:var(--grn)">90</div>
+  <button class="p" id="go2" onclick="run(2)">Start when ready</button>
+  <div id="q2box" style="margin-top:12px"></div>
+  <div class="log" id="log2"></div>
+  <br><button class="p hide" id="next2" onclick="show('deb')">Go to debrief →</button>
+</section>
+
+<section id="s-deb" class="card hide">
+  <h2>🏆 Post-Game Debrief</h2>
+  <p class="mut">Rate how each round felt, then talk through the prompts with your facilitator.</p>
+  <div class="row" style="gap:20px;align-items:flex-start">
+    <div style="flex:1;min-width:260px">
+      <b>Round ① Stress</b><input type="range" id="s1" value="85" oninput="plot()">
+      <b>Round ① Engagement</b><input type="range" id="e1" value="25" oninput="plot()">
+      <b>Round ② Stress</b><input type="range" id="s2" value="30" oninput="plot()">
+      <b>Round ② Engagement</b><input type="range" id="e2" value="85" oninput="plot()">
+    </div>
+    <div style="flex:1;min-width:260px">
+      <div class="grid2" id="mx">
+        <div>😖 Burnout zone<br>high stress · low engagement</div><div>🔥 Intense flow<br>high stress · high engagement</div>
+        <div>😴 Checked out<br>low stress · low engagement</div><div>🌱 Thriving zone<br>low stress · high engagement</div>
+        <span class="dot" id="d1" style="background:var(--red)">1</span><span class="dot" id="d2" style="background:var(--grn)">2</span>
+      </div>
+      <div class="mut" style="font-size:.8rem;text-align:center">Engagement → (left low, right high) · Stress ↑</div>
+    </div>
+  </div>
+  <h3>Reflection prompts</h3>
+  <div class="card"><b>🎮 Autonomy:</b> Which round felt like YOUR game? What made the difference: the silence lock, the penalties, or the freedom to choose your own approach?</div>
+  <div class="card"><b>⚡ Competence:</b> When did you feel most skilled? Did the penalties and live audit help you perform or make you doubt yourself? How did Synergy Points change that?</div>
+  <div class="card"><b>🔥 Controlled vs. intrinsic motivation:</b> In Round 1, were you playing to avoid losing HP? In Round 2, because the problem was interesting? What would you do if no points were counted?</div>
+  <button class="p" onclick="document.getElementById('rev').classList.toggle('hide')">Reveal</button>
+  <div id="rev" class="card hide"><b>Both incidents were equally hard. What changed was the climate.</b> When people feel controlled, they comply, avoid mistakes and disengage. When they feel autonomous and capable, they commit, experiment and care. Rules that protect people from penalties produce compliance. Rules that support choice produce ownership.
+  <p class="mut">Round 1's controlling tone was a deliberate design choice, not a judgment of your ability.</p></div>
+  <br><button onclick="location.reload()">Play again</button>
+</section>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let p={n:"Analyst",hp:100,syn:0},tm=null,running=false,stp=0;
+function show(s){clearInterval(tm);running=false;["intro","r1","r2","deb"].forEach(k=>$("s-"+k).classList.add("hide"));$("s-"+s).classList.remove("hide");
+ if(s==="deb")plot();window.scrollTo(0,0);}
+function start(){p.n=$("nm").value||"Analyst";$("hud").classList.remove("hide");draw();show("r1");}
+function draw(){$("players").innerHTML=`<div class="pl"><b>${p.n}</b>
+<div class="stat"><span>❤️ ${p.hp} HP</span><span>🧠 ${p.syn} Synergy</span></div>
+<div class="bar"><i style="width:${Math.max(0,p.hp)}%;background:${p.hp>50?'var(--grn)':p.hp>0?'var(--amb)':'var(--red)'}"></i></div>
+<button style="margin-top:6px;padding:4px 8px;font-size:.8rem" onclick="pen(50,'violation')">-50 HP violation</button></div>`;}
+function lg(r,t){const e=$("log"+r);e.innerHTML=`<div>${t}</div>`+e.innerHTML;}
+function pen(n,why){p.hp=Math.max(0,p.hp-n);lg(1,`⛔ ${why} (-${n} HP)`);draw();}
+function syn(n,why){p.syn+=n;lg(2,`✨ ${why} (+${n})`);draw();}
+function pick(b){document.querySelectorAll(".ps").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");lg(2,"🎮 Playstyle chosen: "+b.textContent);}
+function run(r){if(running)return;running=true;let t=r===1?60:90;$("go"+r).disabled=true;
+ if(r===1){$("seq1").classList.remove("hide");}
+ $("t"+r).textContent=t;
+ tm=setInterval(()=>{t--;$("t"+r).textContent=Math.max(t,0);if(t<=0){clearInterval(tm);running=false;$("t"+r).textContent="TIME";$("next"+r).classList.remove("hide");
+  if(r===1){document.querySelectorAll("#seq1 button,#c1").forEach(x=>x.disabled=true);lg(1,"⏱ Time. Audit complete.");}}},1000);
+ if(r===2){$("next2").classList.remove("hide");document.querySelectorAll("#q2box button,#q2box textarea").forEach(x=>x.disabled=false);}}
+function step(s,v){if(!running)return;
+ const order={A:0,B:1,C:2};
+ if(order[s]!==stp){pen(50,"sequence violation");return;}
+ if(s==="C"){const v=$("c1").value.trim(),w=v.split(/\s+/).filter(Boolean);if(!w.length||w.length>10||/because/i.test(v)){pen(50,"sentence rejected (max 10 words, no 'because')");return;}}
+ stp++;
+ if(s==="A"){$("A").disabled=true;document.querySelectorAll(".b").forEach(b=>b.disabled=false);lg(1,"A ✔ card read");}
+ if(s==="B"){document.querySelectorAll(".b").forEach(b=>b.disabled=true);$("c1").disabled=false;$("sub1").disabled=false;lg(1,"B ✔ chose "+v);}
+ if(s==="C"){$("c1").disabled=true;$("sub1").disabled=true;lg(1,"C ✔ submitted. Sequence complete.");$("next1").classList.remove("hide");clearInterval(tm);running=false;}}
+const Q=[{q:"Your first move?",type:"one",o:[["Cut the vendor link completely","Stops the attack fastest, but orders halt for thousands of customers."],["Switch the link to read-only","Limits damage and keeps some orders flowing, but attackers may still see data."],["Isolate the vendor in its own network segment","Contains spread and keeps limited service, but takes longer to set up."],["Leave it open and watch the attackers","You learn their targets, but you risk real data loss."]]},
+{q:"Pick your supporting actions",type:"multi",max:3,o:[["Rotate all vendor credentials","Closes access through stolen keys."],["Alert the vendor's security team","Fixes the root cause faster."],["Tell affected customers early","Builds trust but may cause alarm."],["Brief leadership and legal","Prepares you for regulatory duties."],["Turn on extra logging","Helps the investigation later."]]}];
+let sel=[[],[]],done={};
+function rq(){$("q2box").innerHTML=Q.map((q,qi)=>`<div class="card"><b>Q${qi+1}. ${q.q}</b> <span class="mut">${q.type==="multi"?"(pick up to "+q.max+")":"(no wrong answer, each has a trade-off)"}</span><div style="display:grid;gap:8px;margin-top:8px">${q.o.map((o,oi)=>`<button class="qo" data-q="${qi}" data-o="${oi}" disabled onclick="ans(${qi},${oi})">${o[0]}</button>`).join("")}</div><div class="mut" id="fb${qi}" style="margin-top:8px"></div>${q.type==="multi"?`<button class="p" id="lock${qi}" disabled onclick="lockM(${qi})" style="margin-top:8px">Lock in (+50)</button>`:""}</div>`).join("")+`<div class="card"><b>Q3. Plan B (optional)</b><br><textarea id="pb" rows="2" disabled placeholder="If your first move fails, what would you do next?"></textarea><br><br><button id="pbb" disabled onclick="planB()">Submit Plan B (+50)</button></div>`;}
+function ans(qi,oi){const q=Q[qi],b=document.querySelector(`.qo[data-q="${qi}"][data-o="${oi}"]`);
+ if(q.type==="one"){document.querySelectorAll(`.qo[data-q="${qi}"]`).forEach(x=>x.classList.remove("sel"));b.classList.add("sel");$("fb"+qi).textContent="Trade-off: "+q.o[oi][1];if(!done[qi]){done[qi]=1;syn(50,"Q"+(qi+1)+": "+q.o[oi][0]);}}
+ else{const i=sel[qi].indexOf(oi);if(i>-1){sel[qi].splice(i,1);b.classList.remove("sel");}else if(sel[qi].length<q.max){sel[qi].push(oi);b.classList.add("sel");}
+  $("fb"+qi).innerHTML=sel[qi].map(k=>"• "+q.o[k][0]+": "+q.o[k][1]).join("<br>");}}
+function lockM(qi){if(done[qi]||!sel[qi].length)return;done[qi]=1;syn(50,"Q"+(qi+1)+": "+sel[qi].map(k=>Q[qi].o[k][0]).join(" + "));
+ document.querySelectorAll(`.qo[data-q="${qi}"],#lock${qi}`).forEach(x=>x.disabled=true);}
+function planB(){const v=$("pb").value.trim();if(!v)return;syn(50,"Plan B offered");$("pb").disabled=true;$("pbb").disabled=true;}
+rq();
+function plot(){const m=$("mx");[1,2].forEach(i=>{const s=+$("s"+i).value,e=+$("e"+i).value;
+ const d=$("d"+i);d.style.left=(e*0.9+5)+"%";d.style.top=((100-s)*0.9+5)+"%";});}
+</script></body></html>
